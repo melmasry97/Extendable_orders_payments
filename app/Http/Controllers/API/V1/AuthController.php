@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\Interfaces\AuthRepositoryInterface;
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -23,7 +24,10 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        return $this->authRepository->register($validated);
+        $user = $this->authRepository->register($validated);
+        $token = auth()->login($user);
+
+        return ResponseHelper::authSuccess($user, $token, 'User created successfully');
     }
 
     public function login(Request $request)
@@ -33,16 +37,19 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        return $this->authRepository->login($validated);
+        $token = $this->authRepository->login($validated);
+        return ResponseHelper::authSuccess(auth()->user(), $token);
     }
 
     public function logout()
     {
-        return $this->authRepository->logout();
+        $this->authRepository->logout();
+        return ResponseHelper::success(message: 'Successfully logged out');
     }
 
     public function refresh()
     {
-        return $this->authRepository->refresh();
+        $token = $this->authRepository->refresh();
+        return ResponseHelper::authSuccess(auth()->user(), $token);
     }
 }
