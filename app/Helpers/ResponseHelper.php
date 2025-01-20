@@ -13,11 +13,12 @@ class ResponseHelper
         ], $code);
     }
 
-    public static function error($message = 'Error', $code = 400): \Illuminate\Http\JsonResponse
+    public static function error($message = 'Error', $code = 400, $errors = null): \Illuminate\Http\JsonResponse
     {
         return response()->json([
             'status' => 'error',
-            'message' => $message
+            'message' => $message,
+            'errors' => $errors
         ], $code);
     }
 

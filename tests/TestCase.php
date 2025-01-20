@@ -7,19 +7,14 @@ use Illuminate\Support\Facades\Artisan;
 
 abstract class TestCase extends BaseTestCase
 {
-    use CreatesApplication;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Generate application key if not set
-        if (!env('APP_KEY')) {
-            Artisan::call('key:generate', ['--force' => true]);
+        // Skip database preparation for database command tests
+        if (!$this->shouldSkipDatabasePreparation()) {
+            $this->prepareDatabase();
         }
-
-        // Create testing database and run migrations
-        $this->prepareDatabase();
     }
 
     protected function prepareDatabase(): void
@@ -32,5 +27,20 @@ abstract class TestCase extends BaseTestCase
             '--seed' => false,
             '--env' => 'testing'
         ]);
+    }
+
+    protected function shouldSkipDatabasePreparation(): bool
+    {
+        return $this instanceof \Tests\Unit\Commands\CreateTestingDatabaseTest;
+    }
+
+    /**
+     * Creates the application.
+     */
+    public function createApplication()
+    {
+        $app = require __DIR__.'/../bootstrap/app.php';
+        $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+        return $app;
     }
 }
