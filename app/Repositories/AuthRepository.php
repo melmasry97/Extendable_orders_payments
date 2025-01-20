@@ -7,7 +7,6 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Validation\ValidationException;
 use App\Repositories\Interfaces\AuthRepositoryInterface;
 
 class AuthRepository implements AuthRepositoryInterface
@@ -25,11 +24,7 @@ class AuthRepository implements AuthRepositoryInterface
 
     public function login(array $credentials)
     {
-        if (!$token = Auth::attempt($credentials)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
+        $token = Auth::attempt($credentials);
 
         return $token;
     }
@@ -37,9 +32,8 @@ class AuthRepository implements AuthRepositoryInterface
     public function logout()
     {
         if (!Auth::check()) {
-            throw new AuthenticationException('Unauthenticated.');
+            return false;
         }
-
         Auth::logout();
         return true;
     }

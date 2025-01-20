@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Helpers\ResponseHelper;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Repositories\Interfaces\AuthRepositoryInterface;
-use App\Helpers\ResponseHelper;
 
 class AuthController extends Controller
 {
@@ -17,7 +18,7 @@ class AuthController extends Controller
         $this->authRepository = $authRepository;
     }
 
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request) : JsonResponse
     {
         $user = $this->authRepository->register($request->validated());
         $token = auth()->login($user);
@@ -25,19 +26,27 @@ class AuthController extends Controller
         return ResponseHelper::authSuccess($user, $token, 'User created successfully');
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request) : JsonResponse
     {
         $token = $this->authRepository->login($request->validated());
+
+        if (!$token) {
+            return ResponseHelper::error('Invalid credentials', 401, 'invalid email or password');
+        }
+
         return ResponseHelper::authSuccess(auth()->user(), $token);
     }
 
-    public function logout()
+    public function logout() : JsonResponse
     {
-        $this->authRepository->logout();
+        $logout = $this->authRepository->logout();
+        if (!$logout) {
+            return ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
+        }
         return ResponseHelper::success(message: 'Successfully logged out');
     }
 
-    public function refresh()
+    public function refresh() : JsonResponse
     {
         $token = $this->authRepository->refresh();
         return ResponseHelper::authSuccess(auth()->user(), $token);

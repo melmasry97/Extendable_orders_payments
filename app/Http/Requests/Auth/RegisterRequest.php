@@ -3,6 +3,9 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Helpers\ResponseHelper;
 
 class RegisterRequest extends FormRequest
 {
@@ -18,5 +21,16 @@ class RegisterRequest extends FormRequest
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            ResponseHelper::error(
+                'The given data was invalid.',
+                400,
+                $validator->errors()->toArray()
+            )
+        );
     }
 }
