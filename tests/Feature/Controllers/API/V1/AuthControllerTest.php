@@ -5,6 +5,7 @@ namespace Tests\Feature\Controllers\API\V1;
 use Tests\TestCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 class AuthControllerTest extends TestCase
 {
@@ -15,6 +16,7 @@ class AuthControllerTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
         $this->validUserData = [
             'name' => 'Test User',
             'email' => 'test@example.com',
@@ -131,8 +133,11 @@ class AuthControllerTest extends TestCase
             'password' => 'wrongpassword'
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+        $response->assertStatus(401)
+            ->assertJson([
+                'status' => 'error',
+                'message' => 'Invalid credentials'
+            ]);
     }
 
     public function test_user_can_logout_when_authenticated()

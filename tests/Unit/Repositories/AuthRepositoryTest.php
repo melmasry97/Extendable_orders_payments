@@ -67,11 +67,10 @@ class AuthRepositoryTest extends TestCase
             'password' => Hash::make($this->userData['password'])
         ]);
 
-        $this->expectException(ValidationException::class);
-        $this->authRepository->login([
+        $this->assertFalse($this->authRepository->login([
             'email' => $this->userData['email'],
             'password' => 'wrongpassword'
-        ]);
+        ]));
     }
 
     public function test_can_logout_user()
@@ -91,8 +90,7 @@ class AuthRepositoryTest extends TestCase
 
     public function test_logout_fails_when_not_authenticated()
     {
-        $this->expectException(AuthenticationException::class);
-        $this->authRepository->logout();
+        $this->assertFalse($this->authRepository->logout());
     }
 
     public function test_can_refresh_token()
@@ -114,7 +112,6 @@ class AuthRepositoryTest extends TestCase
 
     public function test_refresh_fails_when_not_authenticated()
     {
-        $this->expectException(AuthenticationException::class);
-        $this->authRepository->refresh();
+        $this->assertFalse($this->authRepository->refresh());
     }
 }

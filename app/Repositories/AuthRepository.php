@@ -6,44 +6,35 @@ use App\Models\User;
 use App\Helpers\ResponseHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\AuthenticationException;
 use App\Repositories\Interfaces\AuthRepositoryInterface;
 
 class AuthRepository implements AuthRepositoryInterface
 {
     public function register(array $data)
     {
-        $user = User::create([
+        return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
-
-        return $user;
     }
 
     public function login(array $credentials)
     {
-        $token = Auth::attempt($credentials);
-
-        return $token;
+        return Auth::attempt($credentials);
     }
 
-    public function logout()
+    public function logout() :bool
     {
-        if (!Auth::check()) {
-            return false;
+        if (Auth::check()) {
+            Auth::logout();
+            return true;
         }
-        Auth::logout();
-        return true;
+        return false;
     }
 
     public function refresh()
     {
-        if (!Auth::check()) {
-            throw new AuthenticationException('Unauthenticated.');
-        }
-
-        return Auth::refresh();
+        return Auth::check() ? Auth::refresh() : false;
     }
 }

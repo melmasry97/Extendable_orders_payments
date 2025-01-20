@@ -21,34 +21,29 @@ class AuthController extends Controller
     public function register(RegisterRequest $request) : JsonResponse
     {
         $user = $this->authRepository->register($request->validated());
-        $token = auth()->login($user);
-
-        return ResponseHelper::authSuccess($user, $token, 'User created successfully');
+        return auth()->login($user)
+            ? ResponseHelper::authSuccess($user, auth()->tokenById($user->id), 'User created successfully')
+            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
     }
 
     public function login(LoginRequest $request) : JsonResponse
     {
-        $token = $this->authRepository->login($request->validated());
-
-        if (!$token) {
-            return ResponseHelper::error('Invalid credentials', 401, 'invalid email or password');
-        }
-
-        return ResponseHelper::authSuccess(auth()->user(), $token);
+        return $this->authRepository->login($request->validated())
+            ? ResponseHelper::authSuccess($user = auth()->user(), auth()->tokenById($user->id))
+            : ResponseHelper::error('Invalid credentials', 401, 'invalid email or password');
     }
 
     public function logout() : JsonResponse
     {
-        $logout = $this->authRepository->logout();
-        if (!$logout) {
-            return ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
-        }
-        return ResponseHelper::success(message: 'Successfully logged out');
+        return $this->authRepository->logout()
+            ? ResponseHelper::success(message: 'Successfully logged out')
+            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
     }
 
     public function refresh() : JsonResponse
     {
-        $token = $this->authRepository->refresh();
-        return ResponseHelper::authSuccess(auth()->user(), $token);
+        return $this->authRepository->refresh()
+            ? ResponseHelper::authSuccess(auth()->user(), auth()->refresh())
+            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
     }
 }

@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
         throw new HttpResponseException(
             ResponseHelper::error(
                 'The given data was invalid.',
-                400,
+                422,
                 $validator->errors()->toArray()
             )
         );
