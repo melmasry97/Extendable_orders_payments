@@ -12,8 +12,8 @@ class Payment extends Model
 
     protected $fillable = [
         'order_id',
+        'payment_gateway_id',
         'amount',
-        'gateway',
         'status',
         'transaction_id',
         'gateway_response'
@@ -27,5 +27,10 @@ class Payment extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function gateway(): BelongsTo
+    {
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id');
     }
 }

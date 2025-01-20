@@ -11,11 +11,8 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('status')->default('pending');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled']);
             $table->decimal('total_amount', 10, 2);
-            $table->json('items'); // Will store array of items with name, quantity, price
-            $table->json('customer_details');
-            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

@@ -15,22 +15,22 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'status',
-        'total_amount',
-        'items',
-        'customer_details',
-        'notes'
+        'total_amount'
     ];
 
     protected $casts = [
         'status' => OrderStatus::class,
-        'total_amount' => 'decimal:2',
-        'items' => 'array',
-        'customer_details' => 'array'
+        'total_amount' => 'decimal:2'
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
     public function payments(): HasMany
@@ -53,10 +53,8 @@ class Order extends Model
         parent::boot();
 
         static::creating(function ($order) {
-            if (!isset($order->total_amount)) {
-                $order->total_amount = collect($order->items)->sum(function ($item) {
-                    return $item['quantity'] * $item['price'];
-                });
+            if (!isset($order->status)) {
+                $order->status = OrderStatus::PENDING;
             }
         });
     }
