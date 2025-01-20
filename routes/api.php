@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\OrderController;
+use App\Http\Controllers\API\V1\ProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -18,5 +19,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth.api')->group(function () {
         // Order Management Routes
         Route::apiResource('orders', OrderController::class);
+
+        // Product Management Routes
+        Route::apiResource('products', ProductController::class);
+
+        // Add Product to Order Route
+        Route::post('orders/{order}/items', [OrderController::class, 'addItems']);
     });
 });

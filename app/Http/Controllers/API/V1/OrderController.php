@@ -5,10 +5,13 @@ namespace App\Http\Controllers\API\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Requests\Order\UpdateOrderRequest;
+use App\Http\Requests\Order\AddOrderItemsRequest;
 use App\Models\Order;
+use App\Models\Product;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -92,15 +95,41 @@ class OrderController extends Controller
         }
     }
 
-    public function addItems(Order $order, StoreOrderRequest $request): JsonResponse
+    public function addItems(Order $order, AddOrderItemsRequest $request): JsonResponse
     {
-        $order = $this->orderRepository->addItems($order, $request->validated()['items']);
+        try {
+            DB::transaction(function () use ($order, $request) {
+                $totalAmount = 0;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Items added successfully',
-            'data' => $order
-        ]);
+                foreach ($request->items as $item) {
+                    $product = Product::findOrFail($item['product_id']);
+
+                    $orderItem = $order->items()->create([
+                        'product_id' => $product->id,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $product->price,
+                        'subtotal' => $product->price * $item['quantity']
+                    ]);
+
+                    $totalAmount += $orderItem->subtotal;
+                }
+
+                $order->update([
+                    'total_amount' => $order->total_amount + $totalAmount
+                ]);
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Items added to order successfully',
+                'data' => $order->fresh(['items.product'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to add items to order: ' . $e->getMessage()
+            ], 400);
+        }
     }
 
     public function updateItems(Order $order, UpdateOrderRequest $request): JsonResponse
