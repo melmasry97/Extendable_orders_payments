@@ -6,9 +6,9 @@ use App\Models\User;
 use App\Helpers\ResponseHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Repositories\Interfaces\AuthRepositoryInterface;
+use App\Interfaces\AuthInterface;
 
-class AuthRepository implements AuthRepositoryInterface
+class AuthRepository implements AuthInterface
 {
     public function register(array $data)
     {

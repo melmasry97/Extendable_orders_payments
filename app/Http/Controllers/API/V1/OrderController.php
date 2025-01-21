@@ -8,7 +8,8 @@ use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Http\Requests\Order\AddOrderItemsRequest;
 use App\Models\Order;
 use App\Models\Product;
-use App\Repositories\Interfaces\OrderRepositoryInterface;
+use App\Interfaces\OrderInterface;
+use App\Helpers\ResponseHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     public function __construct(
-        private OrderRepositoryInterface $orderRepository
+        private OrderInterface $orderRepository
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -26,72 +27,42 @@ class OrderController extends Controller
             status: $request->input('status')
         );
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $orders
-        ]);
+        return ResponseHelper::success($orders);
     }
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
-            $order = $this->orderRepository->create($request->validated());
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Order created successfully',
-                'data' => $order
-            ]);
+            $order = $this->orderRepository->createOrder($request->validated());
+            return ResponseHelper::success($order, 'Order created successfully', 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create order: ' . $e->getMessage()
-            ], 500);
+            return ResponseHelper::error('Failed to create order: ' . $e->getMessage(), 500);
         }
     }
 
     public function show(Order $order): JsonResponse
     {
         $order->load(['user', 'payments']);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $order
-        ]);
+        return ResponseHelper::success($order);
     }
 
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
         try {
-            $order = $this->orderRepository->update($order, $request->validated());
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Order updated successfully',
-                'data' => $order
-            ]);
+            $order = $this->orderRepository->updateOrder($order, $request->validated());
+            return ResponseHelper::success($order, 'Order updated successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+            return ResponseHelper::error($e->getMessage(), 400);
         }
     }
 
     public function destroy(Order $order): JsonResponse
     {
         try {
-            $this->orderRepository->delete($order);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Order deleted successfully'
-            ]);
+            $this->orderRepository->deleteOrder($order);
+            return ResponseHelper::success(null, 'Order deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+            return ResponseHelper::error($e->getMessage(), 400);
         }
     }
 
