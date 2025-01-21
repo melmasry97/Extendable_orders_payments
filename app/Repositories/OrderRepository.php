@@ -55,32 +55,28 @@ class OrderRepository extends GeneralRepository implements OrderInterface
      */
     public function update(int $id, array $input): bool
     {
-        return DB::transaction(function () use ($input) {
-            if (isset($input['status']) &&
+        $data = $this->model->find($id);
+            if (
+                isset($input['status']) &&
                 $input['status'] === OrderStatus::CANCELLED->value &&
-                $this->model->payments()->exists()
+                $data->payments()->exists()
             ) {
-                throw new \Exception('Cannot cancel an order with payments');
+                return false;
             }
 
-            $this->model->update($input);
-            return $this->model->fresh();
-        });
+        return $data->update($input);
     }
 
     /**
      * @return bool
      */
-    public function delete(): bool
+    public function destroy(int $id): bool
     {
-        return DB::transaction(function () {
-            if ($this->model->payments()->exists()) {
-                return false;
-            }
-
-            $this->model->items()->delete();
-            return parent::delete();
-        });
+        if ($this->model->payments()->exists()) {
+            return false;
+        }
+        $this->model->items()->delete();
+        return parent::destroy($id);
     }
 
     /**

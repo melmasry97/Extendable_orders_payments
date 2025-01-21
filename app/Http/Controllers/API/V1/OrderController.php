@@ -51,22 +51,24 @@ class OrderController extends Controller
     /**
      * Update the specified order.
      */
-    public function update(UpdateOrderRequest $request): JsonResponse
+    public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
 
-        $order = $this->orderInterface->update($request->validated());
-        return ResponseHelper::success($order, 'Order updated successfully');
+        return $this->orderInterface->update($order->id, $request->validated()) ?
+            ResponseHelper::success($order->fresh(), 'Order updated successfully') :
+            ResponseHelper::error('Cannot update order with payments');
 
     }
 
     /**
      * Remove the specified order.
      */
-    public function destroy(): JsonResponse
+    public function destroy(Order $order): JsonResponse
     {
 
-        $this->orderInterface->delete();
-        return ResponseHelper::success(null, 'Order deleted successfully');
+        return $this->orderInterface->destroy($order->id) ?
+            ResponseHelper::success(null, 'Order deleted successfully') :
+            ResponseHelper::error('Cannot delete order with payments');
 
     }
 }
