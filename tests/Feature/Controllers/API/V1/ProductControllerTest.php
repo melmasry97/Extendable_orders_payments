@@ -1,0 +1,211 @@
+<?php
+
+namespace Tests\Feature\Controllers\API\V1;
+
+use Tests\TestCase;
+use App\Models\User;
+use App\Models\Product;
+use Laravel\Sanctum\Sanctum;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use PHPUnit\Framework\Attributes\Test;
+
+class ProductControllerTest extends TestCase
+{
+    use RefreshDatabase, WithFaker;
+
+    private User $user;
+    private string $baseUrl = 'api/v1/products';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user, 'api'); // Use JWT authentication
+    }
+
+
+    public function it_can_list_all_products()
+    {
+        // Arrange
+        $products = Product::factory()->count(3)->create();
+
+        // Act
+        $response = $this->getJson($this->baseUrl);
+
+        // Assert
+        $response->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'description',
+                        'price',
+                        'quantity',
+                        'created_at',
+                        'updated_at'
+                    ]
+                ]
+            ]);
+    }
+
+    #[Test]
+    public function it_can_create_a_product()
+    {
+        // Arrange
+        $productData = [
+            'name' => $this->faker->word,
+            'description' => $this->faker->sentence,
+            'price' => $this->faker->randomFloat(2, 10, 1000),
+            'quantity' => $this->faker->numberBetween(1, 100)
+        ];
+
+        // Act
+        $response = $this->postJson($this->baseUrl, $productData);
+
+        // Assert
+        $response->assertCreated()
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'name',
+                    'description',
+                    'price',
+                    'quantity',
+                    'created_at',
+                    'updated_at'
+                ]
+            ]);
+
+        $this->assertDatabaseHas('products', [
+            'name' => $productData['name'],
+            'price' => $productData['price'],
+            'quantity' => $productData['quantity'],
+        ]);
+    }
+
+    #[Test]
+    public function it_can_show_a_product()
+    {
+        // Arrange
+        $product = Product::factory()->create();
+
+        // Act
+        $response = $this->getJson("{$this->baseUrl}/{$product->id}");
+
+        // Assert
+        $response->assertOk()
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    'id',
+                    'name',
+                    'description',
+                    'price',
+                    'created_at',
+                    'updated_at',
+                    'quantity'
+                ]
+            ])
+            ->assertJsonPath('data.id', $product->id);
+    }
+
+    #[Test]
+    public function it_can_update_a_product()
+    {
+        // Arrange
+        $product = Product::factory()->create();
+        $updateData = [
+            'name' => 'Updated Name',
+            'price' => "189.99"
+        ];
+
+        // Act
+        $response = $this->patchJson("{$this->baseUrl}/{$product->id}", $updateData);
+
+        // Assert
+        $response->assertOk()
+            ->assertJsonPath('data.name', $updateData['name'])
+            ->assertJsonPath('data.price', $updateData['price']);
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => $updateData['name'],
+            'price' => $updateData['price']
+        ]);
+    }
+
+    #[Test]
+    public function it_can_delete_a_product()
+    {
+        // Arrange
+        $product = Product::factory()->create();
+
+        // Act
+        $response = $this->deleteJson("{$this->baseUrl}/{$product->id}");
+
+        // Assert
+        $response->assertOk();
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    }
+
+    #[Test]
+    public function it_validates_required_fields_when_creating_product()
+    {
+        // Act
+        $response = $this->postJson($this->baseUrl, []);
+
+        // Assert
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['name', 'price', 'quantity']);
+    }
+
+    #[Test]
+    public function it_validates_numeric_fields()
+    {
+        // Arrange
+        $invalidData = [
+            'name' => 'Test Product',
+            'price' => 'not-a-number',
+            'quantity' => 'not-a-number'
+        ];
+
+        // Act
+        $response = $this->postJson($this->baseUrl, $invalidData);
+
+        // Assert
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['price', 'quantity']);
+    }
+
+    #[Test]
+    public function it_returns_404_for_non_existent_product()
+    {
+        // Act
+        $response = $this->getJson("{$this->baseUrl}/99999");
+
+        // Assert
+        $response->assertNotFound();
+    }
+
+    #[Test]
+    public function it_validates_minimum_values_for_price_and_quantity()
+    {
+        // Arrange
+        $invalidData = [
+            'name' => 'Test Product',
+            'price' => -1,
+            'quantity' => -1
+        ];
+
+        // Act
+        $response = $this->postJson($this->baseUrl, $invalidData);
+
+        // Assert
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['price', 'quantity']);
+    }
+}

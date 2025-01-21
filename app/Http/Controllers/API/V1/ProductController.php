@@ -2,26 +2,29 @@
 
 namespace App\Http\Controllers\API\V1;
 
-use App\Helpers\ResponseHelper;
 use App\Models\Product;
+use App\Helpers\ResponseHelper;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Interfaces\ProductInterface;
+use Illuminate\Support\Facades\Request;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Product\ProductIndexRequest;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private ProductInterface $productInterface
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(ProductIndexRequest $request): JsonResponse
     {
-        $products = Product::paginate();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $products
-        ]);
+        $products = $this->productInterface->getPaginated([], $request->input('per_page'));
+        return ResponseHelper::success($products, 'Products fetched successfully');
     }
 
     /**
@@ -29,9 +32,8 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = Product::create($request->validated());
-
-        return ResponseHelper::success( $product,  'Product created successfully', 201);
+        $product = $this->productInterface->create($request->validated());
+        return ResponseHelper::success($product, 'Product created successfully', 201);
     }
 
     /**
@@ -47,13 +49,8 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product->update($request->validated());
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product updated successfully',
-            'data' => $product
-        ]);
+        $product = $this->productInterface->update($product, $request->validated());
+        return ResponseHelper::success($product, 'Product updated successfully');
     }
 
     /**
@@ -63,17 +60,10 @@ class ProductController extends Controller
     {
         // Check if product is used in any order
         if ($product->orderItems()->exists()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Cannot delete product that has been ordered'
-            ], 400);
+            return ResponseHelper::error('Cannot delete product that has been ordered', 400);
         }
 
-        $product->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product deleted successfully'
-        ]);
+        $this->productInterface->delete($product);
+        return ResponseHelper::success(null, 'Product deleted successfully');
     }
 }
