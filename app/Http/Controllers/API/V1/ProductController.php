@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\V1;
 
+use App\Helpers\ResponseHelper;
 use App\Models\Product;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
@@ -30,11 +31,7 @@ class ProductController extends Controller
     {
         $product = Product::create($request->validated());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product created successfully',
-            'data' => $product
-        ], 201);
+        return ResponseHelper::success( $product,  'Product created successfully', 201);
     }
 
     /**
@@ -42,10 +39,7 @@ class ProductController extends Controller
      */
     public function show(Product $product): JsonResponse
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $product
-        ]);
+        return ResponseHelper::success($product, 'Product fetched successfully');
     }
 
     /**

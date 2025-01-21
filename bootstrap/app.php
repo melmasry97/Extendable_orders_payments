@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiHandler;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\ApiAuthenticate;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,5 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->renderable(function (Throwable $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return app(ApiHandler::class)->handle($request, $e);
+            }
+        });
     })->create();
