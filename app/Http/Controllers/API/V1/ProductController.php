@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\Request;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Requests\Product\ProductIndexRequest;
-
+use App\Repositories\ProductRepository;
 class ProductController extends Controller
 {
     public function __construct(
-        private ProductInterface $productInterface
+        private ProductRepository $productRepository
     ) {}
 
     /**
@@ -23,7 +23,7 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request): JsonResponse
     {
-        $products = $this->productInterface->getPaginated([], $request->input('per_page'));
+        $products = $this->productRepository->getPaginated([], $request->input('per_page'));
         return ResponseHelper::success($products, 'Products fetched successfully');
     }
 
@@ -32,7 +32,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = $this->productInterface->create($request->validated());
+        $product = $this->productRepository->create($request->validated());
         return ResponseHelper::success($product, 'Product created successfully', 201);
     }
 
@@ -49,7 +49,7 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product = $this->productInterface->update($product, $request->validated());
+        $product = $this->productRepository->update($product, $request->validated());
         return ResponseHelper::success($product, 'Product updated successfully');
     }
 
@@ -63,7 +63,7 @@ class ProductController extends Controller
             return ResponseHelper::error('Cannot delete product that has been ordered', 400);
         }
 
-        $this->productInterface->delete($product);
+        $this->productRepository->delete($product);
         return ResponseHelper::success(null, 'Product deleted successfully');
     }
 }
