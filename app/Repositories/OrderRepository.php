@@ -4,16 +4,21 @@ namespace App\Repositories;
 
 use App\Models\Order;
 use App\Enums\OrderStatus;
+use App\Interfaces\OrderInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
-use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class OrderRepository implements OrderRepositoryInterface
+class OrderRepository extends GeneralRepository implements OrderInterface
 {
+    public function __construct()
+    {
+        parent::__construct(new Order());
+    }
+
     public function getAllPaginated(int $perPage = 15, ?string $status = null): LengthAwarePaginator
     {
-        return Order::with(['user'])
+        return $this->model->with(['user'])
             ->when($status, function (Builder $query) use ($status) {
                 $query->where('status', $status);
             })
@@ -26,10 +31,10 @@ class OrderRepository implements OrderRepositoryInterface
         return Order::with(['user', 'payments'])->find($id);
     }
 
-    public function create(array $data): Order
+    public function createOrder(array $data): Order
     {
         return DB::transaction(function () use ($data) {
-            $order = Order::create([
+            $order = $this->create([
                 'user_id' => auth()->id(),
                 'status' => OrderStatus::PENDING,
                 'items' => $data['items'],
@@ -41,7 +46,7 @@ class OrderRepository implements OrderRepositoryInterface
         });
     }
 
-    public function update(Order $order, array $data): Order
+    public function updateOrder(Order $order, array $data): Order
     {
         if (isset($data['status']) && $data['status'] === OrderStatus::CANCELLED->value && $order->payments()->exists()) {
             throw new \Exception('Cannot cancel order with existing payments');
@@ -66,7 +71,7 @@ class OrderRepository implements OrderRepositoryInterface
         });
     }
 
-    public function delete(Order $order): bool
+    public function deleteOrder(Order $order): bool
     {
         if (!$order->canBeDeleted()) {
             throw new \Exception('Cannot delete order with existing payments');

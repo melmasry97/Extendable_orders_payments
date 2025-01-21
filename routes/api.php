@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\OrderController;
 use App\Http\Controllers\API\V1\ProductController;
+use App\Http\Controllers\API\V1\OrderItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -23,7 +24,9 @@ Route::prefix('v1')->group(function () {
         // Product Management Routes
         Route::apiResource('products', ProductController::class);
 
-        // Add Product to Order Route
-        Route::post('orders/{order}/items', [OrderController::class, 'addItems']);
+        // Nested routes for order items
+        Route::post('orders/{order}/items', [OrderItemController::class, 'store']);
+        Route::patch('orders/{order}/items/{item}', [OrderItemController::class, 'update']);
+        Route::delete('orders/{order}/items/{item}', [OrderItemController::class, 'destroy']);
     });
 });
