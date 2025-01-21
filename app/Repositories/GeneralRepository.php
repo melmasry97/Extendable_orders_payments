@@ -4,8 +4,9 @@ namespace App\Repositories;
 
 use App\Interfaces\GeneralInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
-class GeneralRepository implements GeneralInterface
+abstract class GeneralRepository implements GeneralInterface
 {
     public function __construct(protected Model $model)
     {
@@ -31,34 +32,28 @@ class GeneralRepository implements GeneralInterface
         return $this->model->with($with)->where($conditions)->get();
     }
 
-    public function getSpeseficeColum($colum, $conditions = [])
-    {
-        return $this->model->where($conditions)->pluck($colum);
-    }
-
     public function getMultiColum($colums = [], $conditions = [])
     {
         return $this->model->where($conditions)->get($colums);
     }
 
-    public function create($input)
+    public function find(int $id): Model
+    {
+        return $this->model->findOrFail($id);
+    }
+
+    public function create(array $input): Model
     {
         return $this->model->create($input);
     }
 
-    public function update($model, $input): Model
+    public function update(int $id, array $input): bool
     {
-        $model->update($input);
-        return $model->fresh();
+        return $this->model->find($id)->update($input);
     }
 
-    public function delete($model)
+    public function destroy(int $id): bool
     {
-        return $model->delete();
-    }
-
-    public function find(int $id): Model
-    {
-        return $this->model->findOrFail($id);
+        return $this->model->find($id)->delete();
     }
 }

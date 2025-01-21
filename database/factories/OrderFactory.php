@@ -23,22 +23,8 @@ class OrderFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'status' => $this->faker->randomElement(OrderStatus::cases())->value,
-            'total_amount' => $this->faker->randomFloat(2, 100, 1000),
-            'items' => [
-                [
-                    'name' => $this->faker->word(),
-                    'quantity' => $this->faker->numberBetween(1, 5),
-                    'price' => $this->faker->randomFloat(2, 10, 100)
-                ]
-            ],
-            'customer_details' => [
-                'name' => $this->faker->name(),
-                'email' => $this->faker->email(),
-                'phone' => $this->faker->phoneNumber(),
-                'address' => $this->faker->address()
-            ],
-            'notes' => $this->faker->sentence()
+            'status' => OrderStatus::PENDING,
+            'total_amount' => 0,
         ];
     }
 

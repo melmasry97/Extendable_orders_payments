@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Enums\OrderStatus;
 use App\Interfaces\OrderInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -16,69 +17,90 @@ class OrderRepository extends GeneralRepository implements OrderInterface
         parent::__construct(new Order());
     }
 
-    public function getAllPaginated(int $perPage = 15, ?string $status = null): LengthAwarePaginator
+    /**
+     * @param array $input
+     * @return Model
+     */
+    public function create(array $input): Model
     {
-        return $this->model->with(['user'])
-            ->when($status, function (Builder $query) use ($status) {
-                $query->where('status', $status);
-            })
-            ->latest()
-            ->paginate($perPage);
-    }
-
-    public function getById(int $id): ?Order
-    {
-        return Order::with(['user', 'payments'])->find($id);
-    }
-
-    public function createOrder(array $data): Order
-    {
-        return DB::transaction(function () use ($data) {
-            $order = $this->create([
+        return DB::transaction(function () use ($input) {
+            $order = parent::create([
                 'user_id' => auth()->id(),
                 'status' => OrderStatus::PENDING,
-                'items' => $data['items'],
-                'customer_details' => $data['customer_details'],
-                'notes' => $data['notes'] ?? null
+                'total_amount' => 0
             ]);
 
-            return $order->fresh(['user']);
-        });
-    }
+            if (isset($input['items'])) {
+                foreach ($input['items'] as $item) {
+                    $order->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'subtotal' => $item['quantity'] * $item['unit_price']
+                    ]);
+                }
 
-    public function updateOrder(Order $order, array $data): Order
-    {
-        if (isset($data['status']) && $data['status'] === OrderStatus::CANCELLED->value && $order->payments()->exists()) {
-            throw new \Exception('Cannot cancel order with existing payments');
-        }
-
-        return DB::transaction(function () use ($order, $data) {
-            $order->update([
-                'status' => $data['status'] ?? $order->status,
-                'items' => $data['items'] ?? $order->items,
-                'customer_details' => $data['customer_details'] ?? $order->customer_details,
-                'notes' => $data['notes'] ?? $order->notes
-            ]);
-
-            if (isset($data['items'])) {
-                $order->total_amount = collect($data['items'])->sum(function ($item) {
-                    return $item['quantity'] * $item['price'];
-                });
-                $order->save();
+                $order->update([
+                    'total_amount' => $order->items->sum('subtotal')
+                ]);
             }
 
-            return $order->fresh(['user']);
+            return $order->fresh(['user', 'items.product']);
         });
     }
 
-    public function deleteOrder(Order $order): bool
+    /**
+     * @param array $input
+     * @return bool
+     */
+    public function update(int $id, array $input): bool
     {
-        if (!$order->canBeDeleted()) {
-            throw new \Exception('Cannot delete order with existing payments');
+        return DB::transaction(function () use ($input) {
+            if (isset($input['status']) &&
+                $input['status'] === OrderStatus::CANCELLED->value &&
+                $this->model->payments()->exists()
+            ) {
+                throw new \Exception('Cannot cancel an order with payments');
+            }
+
+            $this->model->update($input);
+            return $this->model->fresh();
+        });
+    }
+
+    /**
+     * @return bool
+     */
+    public function delete(): bool
+    {
+        return DB::transaction(function () {
+            if ($this->model->payments()->exists()) {
+                return false;
+            }
+
+            $this->model->items()->delete();
+            return parent::delete();
+        });
+    }
+
+    /**
+     * @param int $id
+     * @return Order|null
+     */
+    public function getOrderWithDetails(int $id): ?Order
+    {
+        return $this->model->with(['user', 'items.product', 'payments'])
+            ->findOrFail($id);
+    }
+
+    public function getAllPaginated(int $perPage = 15, string $status = null): LengthAwarePaginator
+    {
+        $query = $this->model->with(['user']);
+
+        if ($status) {
+            $query->where('status', $status);
         }
 
-        return DB::transaction(function () use ($order) {
-            return $order->delete();
-        });
+        return $query->paginate($perPage);
     }
 }

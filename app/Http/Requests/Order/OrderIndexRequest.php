@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\Order;
 
-use App\Enums\OrderStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use App\Enums\OrderStatus;
 
-class UpdateOrderRequest extends FormRequest
+class OrderIndexRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +23,8 @@ class UpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['sometimes', 'required', Rule::enum(OrderStatus::class)],
-
-            'items' => ['sometimes', 'required', 'array', 'min:1'],
-            'items.*.product_id' => ['required_with:items', 'exists:products,id'],
-            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
-            'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'status' => 'sometimes|string|in:' . implode(',', array_column(OrderStatus::cases(), 'value'))
         ];
     }
 }

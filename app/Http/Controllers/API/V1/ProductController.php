@@ -4,18 +4,17 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Models\Product;
 use App\Helpers\ResponseHelper;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Interfaces\ProductInterface;
-use Illuminate\Support\Facades\Request;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Requests\Product\ProductIndexRequest;
-use App\Repositories\ProductRepository;
 class ProductController extends Controller
 {
     public function __construct(
-        private ProductRepository $productRepository
+        private ProductInterface $productInterface
     ) {}
 
     /**
@@ -23,7 +22,7 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request): JsonResponse
     {
-        $products = $this->productRepository->getPaginated([], $request->input('per_page'));
+        $products = $this->productInterface->getPaginated([], $request->input('per_page'));
         return ResponseHelper::success($products, 'Products fetched successfully');
     }
 
@@ -32,7 +31,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = $this->productRepository->create($request->validated());
+        $product = $this->productInterface->create($request->validated());
         return ResponseHelper::success($product, 'Product created successfully', 201);
     }
 
@@ -49,8 +48,9 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product = $this->productRepository->update($product, $request->validated());
-        return ResponseHelper::success($product, 'Product updated successfully');
+        return $this->productInterface->update($product->id, $request->validated()) ?
+            ResponseHelper::success($product->fresh(), 'Product updated successfully') :
+            ResponseHelper::error('Cannot delete product that has been ordered');
     }
 
     /**
@@ -58,12 +58,9 @@ class ProductController extends Controller
      */
     public function destroy(Product $product): JsonResponse
     {
-        // Check if product is used in any order
-        if ($product->orderItems()->exists()) {
-            return ResponseHelper::error('Cannot delete product that has been ordered', 400);
-        }
+        return $this->productInterface->destroy($product->id) ?
+            ResponseHelper::success(null, 'Product deleted successfully') :
+            ResponseHelper::error('Cannot delete product that has been ordered');
 
-        $this->productRepository->delete($product);
-        return ResponseHelper::success(null, 'Product deleted successfully');
     }
 }

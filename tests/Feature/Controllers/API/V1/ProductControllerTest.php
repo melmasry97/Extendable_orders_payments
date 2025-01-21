@@ -9,6 +9,7 @@ use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use PHPUnit\Framework\Attributes\Test;
+use App\Models\Order;
 
 class ProductControllerTest extends TestCase
 {
@@ -24,29 +25,31 @@ class ProductControllerTest extends TestCase
         $this->actingAs($this->user, 'api'); // Use JWT authentication
     }
 
-
+    #[Test]
     public function it_can_list_all_products()
     {
         // Arrange
         $products = Product::factory()->count(3)->create();
-
         // Act
         $response = $this->getJson($this->baseUrl);
 
         // Assert
         $response->assertOk()
-            ->assertJsonCount(3, 'data')
+            ->assertJsonCount(3, 'data.data')
             ->assertJsonStructure([
                 'status',
                 'data' => [
-                    '*' => [
-                        'id',
-                        'name',
-                        'description',
-                        'price',
-                        'quantity',
-                        'created_at',
-                        'updated_at'
+                    'current_page',
+                    'data' => [
+                        '*' => [
+                            'id',
+                            'name',
+                            'description',
+                            'price',
+                            'quantity',
+                            'created_at',
+                            'updated_at'
+                        ]
                     ]
                 ]
             ]);
@@ -207,5 +210,50 @@ class ProductControllerTest extends TestCase
         // Assert
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['price', 'quantity']);
+    }
+
+    #[Test]
+    public function it_cannot_delete_product_with_orders()
+    {
+        // Arrange
+        $product = Product::factory()->create();
+        $order = Order::factory()->create();
+        $order->items()->create([
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => $product->price,
+            'subtotal' => $product->price
+        ]);
+
+        // Act
+        $response = $this->deleteJson("{$this->baseUrl}/{$product->id}");
+
+        // Assert
+        $response->assertStatus(400)
+            ->assertJson([
+                'status' => 'error',
+                'message' => 'Cannot delete product that has been ordered'
+            ]);
+
+        $this->assertDatabaseHas('products', ['id' => $product->id]);
+    }
+
+    #[Test]
+    public function it_can_delete_product_without_orders()
+    {
+        // Arrange
+        $product = Product::factory()->create();
+
+        // Act
+        $response = $this->deleteJson("{$this->baseUrl}/{$product->id}");
+
+        // Assert
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Product deleted successfully'
+            ]);
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
     }
 }

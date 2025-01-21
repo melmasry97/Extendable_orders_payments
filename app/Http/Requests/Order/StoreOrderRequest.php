@@ -23,18 +23,20 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.name' => ['required', 'string'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0'
+        ];
+    }
 
-            'customer_details' => ['required', 'array'],
-            'customer_details.name' => ['required', 'string'],
-            'customer_details.email' => ['required', 'email'],
-            'customer_details.phone' => ['required', 'string'],
-            'customer_details.address' => ['required', 'string'],
-
-            'notes' => ['nullable', 'string']
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'At least one item is required',
+            'items.*.product_id.exists' => 'Selected product does not exist',
+            'items.*.quantity.min' => 'Quantity must be at least 1',
+            'items.*.unit_price.min' => 'Unit price cannot be negative'
         ];
     }
 }
