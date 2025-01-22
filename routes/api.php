@@ -4,6 +4,7 @@ use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\OrderController;
 use App\Http\Controllers\API\V1\ProductController;
 use App\Http\Controllers\API\V1\OrderItemController;
+use App\Http\Controllers\API\V1\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -26,5 +27,12 @@ Route::prefix('v1')->group(function () {
 
         // Nested routes for order items
         Route::apiResource('orders.items', OrderItemController::class);
+
+        // Payment routes
+        Route::get('payments', [PaymentController::class, 'index']);
+        Route::get('payments/{payment}', [PaymentController::class, 'show']);
+        Route::post('orders/{order}/payments', [PaymentController::class, 'process']);
+        Route::get('orders/{order}/payments', [PaymentController::class, 'getOrderPayments']);
     });
+
 });

@@ -10,9 +10,11 @@ use App\Repositories\AuthRepository;
 use App\Repositories\OrderRepository;
 use App\Interfaces\OrderItemInterface;
 use App\Repositories\GeneralRepository;
+use App\Repositories\PaymentRepository;
 use App\Repositories\ProductRepository;
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\OrderItemRepository;
+use App\Interfaces\PaymentRepositoryInterface;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ProductInterface::class, ProductRepository::class);
         $this->app->bind(AuthInterface::class, AuthRepository::class);
         $this->app->bind(GeneralInterface::class, GeneralRepository::class);
+        $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
     }
 
     /**
