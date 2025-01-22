@@ -6,6 +6,7 @@ use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use App\Interfaces\ProductInterface;
 use Illuminate\Database\Eloquent\Model;
+use App\Exceptions\Product\ProductHasOrdersException;
 
 class ProductRepository extends GeneralRepository implements ProductInterface
 {
@@ -16,9 +17,12 @@ class ProductRepository extends GeneralRepository implements ProductInterface
 
     public function destroy(int $id): bool
     {
-        if ($this->model->orderItems()->exists()) {
-            return false;
+        $product = $this->model->findOrFail($id);
+        
+        if ($product->orderItems()->exists()) {
+            throw new ProductHasOrdersException();
         }
+
         return parent::destroy($id);
     }
 }

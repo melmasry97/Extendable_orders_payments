@@ -21,6 +21,9 @@ class Product extends Model
         'price' => 'decimal:2'
     ];
 
+    /**
+     * Get all order items for this product
+     */
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);

@@ -4,12 +4,12 @@ namespace Tests\Feature\Controllers\API\V1;
 
 use Tests\TestCase;
 use App\Models\User;
-use App\Models\Product;
-use Laravel\Sanctum\Sanctum;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use PHPUnit\Framework\Attributes\Test;
 use App\Models\Order;
+use App\Models\Product;
+use PHPUnit\Framework\Attributes\Test;
+use Illuminate\Foundation\Testing\WithFaker;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ProductControllerTest extends TestCase
 {
@@ -17,12 +17,28 @@ class ProductControllerTest extends TestCase
 
     private User $user;
     private string $baseUrl = 'api/v1/products';
+    private string $token;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Create user and generate JWT token
         $this->user = User::factory()->create();
-        $this->actingAs($this->user, 'api'); // Use JWT authentication
+        $this->token = JWTAuth::fromUser($this->user);
+
+        // Set the authorization header for all requests
+        $this->withHeader('Authorization', 'Bearer ' . $this->token);
+    }
+
+    protected function tearDown(): void
+    {
+        // Clean up by logging out if authenticated
+        if (auth()->check()) {
+            auth()->logout();
+        }
+
+        parent::tearDown();
     }
 
     #[Test]
@@ -47,9 +63,9 @@ class ProductControllerTest extends TestCase
                             'name',
                             'description',
                             'price',
-                            'quantity',
                             'created_at',
-                            'updated_at'
+                            'updated_at',
+                            'quantity'
                         ]
                     ]
                 ]

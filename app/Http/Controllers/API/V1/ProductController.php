@@ -53,8 +53,9 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
+        $this->productInterface->update($product->id, $request->validated());
         return ResponseHelper::success(
-            $this->productInterface->update($product->id, $request->validated()),
+            $product->fresh(),
             'Product updated successfully'
         );
     }

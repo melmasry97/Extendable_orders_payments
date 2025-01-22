@@ -2,9 +2,11 @@
 
 namespace App\Helpers;
 
+use Illuminate\Http\JsonResponse;
+
 class ResponseHelper
 {
-    public static function success($data = [], $message = 'Success', $code = 200): \Illuminate\Http\JsonResponse
+    public static function success($data = [], string $message = 'Success', int $code = 200): JsonResponse
     {
         return response()->json([
             'status' => 'success',
@@ -13,16 +15,21 @@ class ResponseHelper
         ], $code);
     }
 
-    public static function error($message = 'Error', $code = 400, $errors = null): \Illuminate\Http\JsonResponse
+    public static function error(string $message = 'Error', int $code = 400, ?array $errors = null): JsonResponse
     {
-        return response()->json([
+        $response = [
             'status' => 'error',
-            'message' => $message,
-            'errors' => $errors
-        ], $code);
+            'message' => $message
+        ];
+
+        if ($errors !== null) {
+            $response['errors'] = $errors;
+        }
+
+        return response()->json($response, $code);
     }
 
-    public static function authSuccess($user, $token, $message = 'Success'): \Illuminate\Http\JsonResponse
+    public static function authSuccess($user, $token, $message = 'Success'): JsonResponse
     {
         return response()->json([
             'status' => 'success',
