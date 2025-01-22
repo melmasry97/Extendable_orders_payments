@@ -17,11 +17,6 @@ abstract class GeneralRepository implements GeneralInterface
         return $this->model->with($with);
     }
 
-    public function getData($with = [])
-    {
-        return $this->withData($with)->get();
-    }
-
     public function getPaginated($with = [], $number = 15)
     {
         return $this->withData($with)->paginate($number);
@@ -30,16 +25,6 @@ abstract class GeneralRepository implements GeneralInterface
     public function getBy($conditions = [], $with = [])
     {
         return $this->model->with($with)->where($conditions)->get();
-    }
-
-    public function getMultiColum($colums = [], $conditions = [])
-    {
-        return $this->model->where($conditions)->get($colums);
-    }
-
-    public function find(int $id): Model
-    {
-        return $this->model->findOrFail($id);
     }
 
     public function create(array $input): Model
