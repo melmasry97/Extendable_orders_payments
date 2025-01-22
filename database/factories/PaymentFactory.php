@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PaymentGateway;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,7 +24,7 @@ class PaymentFactory extends Factory
         return [
             'order_id' => Order::factory(),
             'amount' => $this->faker->randomFloat(2, 10, 1000),
-            'gateway' => $this->faker->randomElement(['stripe', 'paypal']),
+            'payment_gateway_id' => PaymentGateway::factory()->create()->id,
             'status' => $this->faker->randomElement(['pending', 'successful', 'failed']),
             'transaction_id' => $this->faker->uuid(),
             'gateway_response' => [

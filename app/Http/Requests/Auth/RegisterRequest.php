@@ -23,14 +23,4 @@ class RegisterRequest extends FormRequest
         ];
     }
 
-    protected function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(
-            ResponseHelper::error(
-                'The given data was invalid.',
-                422,
-                $validator->errors()->toArray()
-            )
-        );
-    }
 }

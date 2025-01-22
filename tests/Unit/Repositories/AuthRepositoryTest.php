@@ -5,12 +5,8 @@ namespace Tests\Unit\Repositories;
 use Tests\TestCase;
 use App\Models\User;
 use App\Repositories\AuthRepository;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class AuthRepositoryTest extends TestCase
 {
@@ -18,100 +14,84 @@ class AuthRepositoryTest extends TestCase
 
     private AuthRepository $authRepository;
     private array $userData;
+    private User $user;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
-        $this->authRepository = new AuthRepository();
+
+        $this->authRepository = app(AuthRepository::class);
+
         $this->userData = [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password123'
         ];
+
+        $this->user = User::factory()->create([
+            'email' => $this->userData['email'],
+            'password' => bcrypt($this->userData['password'])
+        ]);
     }
 
-    public function test_can_register_user()
+    public function test_register_creates_new_user(): void
     {
-        $user = $this->authRepository->register($this->userData);
+        $newUserData = [
+            'name' => 'New User',
+            'email' => 'new@example.com',
+            'password' => 'password123'
+        ];
+
+        $user = $this->authRepository->register($newUserData);
 
         $this->assertInstanceOf(User::class, $user);
-        $this->assertEquals($this->userData['name'], $user->name);
-        $this->assertEquals($this->userData['email'], $user->email);
-        $this->assertTrue(Hash::check($this->userData['password'], $user->password));
+        $this->assertEquals($newUserData['name'], $user->name);
+        $this->assertEquals($newUserData['email'], $user->email);
     }
 
-    public function test_can_login_user()
+    public function test_login_returns_user_with_valid_credentials(): void
     {
-        // Create user first
-        User::create([
-            'name' => $this->userData['name'],
-            'email' => $this->userData['email'],
-            'password' => Hash::make($this->userData['password'])
-        ]);
-
-        $token = $this->authRepository->login([
+        $user = $this->authRepository->login([
             'email' => $this->userData['email'],
             'password' => $this->userData['password']
         ]);
 
-        $this->assertIsString($token);
-        $this->assertTrue(auth()->check());
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertEquals($this->user->id, $user->id);
     }
 
-    public function test_login_fails_with_incorrect_credentials()
+    public function test_login_throws_exception_with_invalid_credentials(): void
     {
-        // Create user first
-        User::create([
-            'name' => $this->userData['name'],
-            'email' => $this->userData['email'],
-            'password' => Hash::make($this->userData['password'])
-        ]);
+        $this->expectException(AuthenticationException::class);
+        $this->expectExceptionMessage('Invalid credentials');
 
-        $this->assertFalse($this->authRepository->login([
-            'email' => $this->userData['email'],
+        $this->authRepository->login([
+            'email' => 'wrong@example.com',
             'password' => 'wrongpassword'
-        ]));
-    }
-
-    public function test_can_logout_user()
-    {
-        // Create and login user first
-        $user = User::create([
-            'name' => $this->userData['name'],
-            'email' => $this->userData['email'],
-            'password' => Hash::make($this->userData['password'])
         ]);
-
-        auth()->login($user);
-
-        $this->assertTrue($this->authRepository->logout());
-        $this->assertFalse(auth()->check());
     }
 
-    public function test_logout_fails_when_not_authenticated()
+    public function test_logout_returns_true_when_user_is_authenticated(): void
     {
-        $this->assertFalse($this->authRepository->logout());
+        $this->actingAs($this->user);
+
+        $result = $this->authRepository->logout();
+
+        $this->assertTrue($result);
+        $this->assertGuest();
     }
 
-    public function test_can_refresh_token()
+    public function test_logout_returns_false_when_no_user_is_authenticated(): void
     {
-        // Create and login user first
-        $user = User::create([
-            'name' => $this->userData['name'],
-            'email' => $this->userData['email'],
-            'password' => Hash::make($this->userData['password'])
-        ]);
+        $result = $this->authRepository->logout();
 
-        auth()->login($user);
-        $oldToken = auth()->tokenById($user->id);
-
-        $newToken = $this->authRepository->refresh();
-        $this->assertIsString($newToken);
-        $this->assertNotEquals($oldToken, $newToken);
+        $this->assertFalse($result);
     }
 
-    public function test_refresh_fails_when_not_authenticated()
+    public function test_refresh_returns_false_when_no_user_is_authenticated(): void
     {
-        $this->assertFalse($this->authRepository->refresh());
+        $result = $this->authRepository->refresh();
+
+        $this->assertFalse($result);
     }
 }

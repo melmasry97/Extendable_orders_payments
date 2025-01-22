@@ -20,14 +20,13 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = $this->authInterface->register($request->validated());
-        $this->authInterface->login($user);
         return ResponseHelper::authSuccess($user, auth()->tokenById($user->id), 'User created successfully');
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
         $user = $this->authInterface->login($request->validated());
-        return ResponseHelper::authSuccess($user = auth()->user(), auth()->tokenById($user->id));
+        return ResponseHelper::authSuccess($user, auth()->tokenById($user->id), 'Successfully logged in');
     }
 
     public function logout(): JsonResponse

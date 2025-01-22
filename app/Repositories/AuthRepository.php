@@ -4,9 +4,10 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Helpers\ResponseHelper;
+use App\Interfaces\AuthInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Interfaces\AuthInterface;
+use Illuminate\Auth\AuthenticationException;
 
 class AuthRepository implements AuthInterface
 {
@@ -21,7 +22,10 @@ class AuthRepository implements AuthInterface
 
     public function login(array $credentials)
     {
-        return Auth::attempt($credentials);
+        if (!Auth::attempt($credentials)) {
+            throw new AuthenticationException('Invalid credentials');
+        }
+        return Auth::user();
     }
 
     public function logout() :bool

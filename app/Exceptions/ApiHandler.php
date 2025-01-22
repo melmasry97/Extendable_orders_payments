@@ -79,7 +79,7 @@ class ApiHandler
     private function handleAuthenticationException(AuthenticationException $exception): \Illuminate\Http\JsonResponse
     {
         return ResponseHelper::error(
-            message: 'Unauthenticated',
+            message: $exception->getMessage() ?: 'Unauthenticated',
             code: self::HTTP_CODES['AUTHENTICATION_ERROR']
         );
     }

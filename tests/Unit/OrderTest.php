@@ -6,6 +6,8 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Models\OrderItem;
 use App\Enums\OrderStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -71,31 +73,38 @@ class OrderTest extends TestCase
 
     public function test_order_calculates_total_amount_on_creation(): void
     {
-        $orderData = [
+        // Create products with known prices
+        $product1 = Product::factory()->create(['price' => 100]);
+        $product2 = Product::factory()->create(['price' => 50]);
+
+        // Create order
+        $order = Order::create([
             'user_id' => $this->user->id,
             'status' => OrderStatus::PENDING,
-            'items' => [
-                [
-                    'name' => 'Test Product 1',
-                    'quantity' => 2,
-                    'price' => 100.00
-                ],
-                [
-                    'name' => 'Test Product 2',
-                    'quantity' => 1,
-                    'price' => 50.00
-                ]
-            ],
-            'customer_details' => [
-                'name' => 'Test Customer',
-                'email' => 'test@example.com',
-                'phone' => '1234567890',
-                'address' => 'Test Address'
-            ]
-        ];
+            'total_amount' => 0
+        ]);
 
-        $order = Order::create($orderData);
+        // Create order items
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product1->id,
+            'quantity' => 2,
+            'unit_price' => $product1->price,
+            'subtotal' => $product1->price * 2
+        ]);
 
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product2->id,
+            'quantity' => 1,
+            'unit_price' => $product2->price,
+            'subtotal' => $product2->price
+        ]);
+
+        // Refresh order to get the updated total
+        $order->refresh();
+
+        // Assert total amount (2 * 100 + 1 * 50 = 250)
         $this->assertEquals(250.00, $order->total_amount);
     }
 
@@ -104,13 +113,4 @@ class OrderTest extends TestCase
         $this->assertInstanceOf(OrderStatus::class, $this->order->status);
     }
 
-    public function test_order_casts_items_to_array(): void
-    {
-        $this->assertIsArray($this->order->items);
-    }
-
-    public function test_order_casts_customer_details_to_array(): void
-    {
-        $this->assertIsArray($this->order->customer_details);
-    }
 }
