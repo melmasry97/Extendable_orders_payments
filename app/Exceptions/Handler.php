@@ -16,7 +16,7 @@ class Handler extends ExceptionHandler
      * @var array<int, class-string<Throwable>>
      */
     protected $dontReport = [
-        //
+        PaymentException::class,
     ];
 
     /**
@@ -37,10 +37,8 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
-        $this->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
-            if ($request->expectsJson()) {
-                return ResponseHelper::error('Unauthenticated', 401);
-            }
+        $this->reportable(function (Throwable $e) {
+            //
         });
     }
 
@@ -78,10 +76,14 @@ class Handler extends ExceptionHandler
      * Render an exception into an HTTP response.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function render($request, Throwable $e)
     {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return app(ApiHandler::class)->handle($e);
+        }
+
         return parent::render($request, $e);
     }
 }

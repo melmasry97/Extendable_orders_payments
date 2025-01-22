@@ -42,8 +42,10 @@ class OrderController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $order = $this->orderInterface->getOrderWithDetails($id);
-        return ResponseHelper::success($order, 'Order fetched successfully');
+        return ResponseHelper::success(
+            $this->orderInterface->getOrderWithDetails($id),
+            'Order fetched successfully'
+        );
 
     }
 
@@ -52,11 +54,10 @@ class OrderController extends Controller
      */
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
-
-        return $this->orderInterface->update($order->id, $request->validated()) ?
-            ResponseHelper::success($order->fresh(), 'Order updated successfully') :
-            ResponseHelper::error('Cannot update order with payments');
-
+        return ResponseHelper::success(
+            $this->orderInterface->update($order->id, $request->validated()),
+            'Order updated successfully'
+        );
     }
 
     /**

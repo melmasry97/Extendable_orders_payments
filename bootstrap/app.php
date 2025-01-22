@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ApiHandler;
+use App\Exceptions\PaymentException;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\ApiAuthenticate;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,9 +20,26 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Don't report payment exceptions
+        $exceptions->dontReport(PaymentException::class);
+
+        // Handle API exceptions
         $exceptions->renderable(function (Throwable $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
-                return app(ApiHandler::class)->handle($request, $e);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return app(ApiHandler::class)->handle($e);
             }
+        });
+
+        // Custom reporting for specific exceptions
+        $exceptions->reportable(function (PaymentException $e) {
+            // Log payment errors if needed
+            if ($e->getCode() >= 500) {
+                \Log::error('Payment System Error', [
+                    'message' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                    'errors' => $e->getErrors()
+                ]);
+            }
+            return false;
         });
     })->create();

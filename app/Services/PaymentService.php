@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
 use App\Interfaces\PaymentGatewayInterface;
+use App\Exceptions\PaymentException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Services\Payment\PaymentStrategyManager;
 use App\Interfaces\PaymentRepositoryInterface;
@@ -82,18 +83,38 @@ class PaymentService
     {
         // Validate order status
         if ($order->status !== 'confirmed') {
-            throw new \InvalidArgumentException('Payments can only be processed for confirmed orders');
+            throw new PaymentException(
+                'Payments can only be processed for confirmed orders',
+                PaymentException::ORDER_NOT_CONFIRMED
+            );
         }
 
-        // Get and set payment gateway
-        $gateway = $this->paymentRepository->getActiveGateway($gatewayName);
-        $this->strategyManager->setStrategy($gateway);
+        try {
+            // Get and set payment gateway
+            $gateway = $this->paymentRepository->getActiveGateway($gatewayName);
+            $this->strategyManager->setStrategy($gateway);
 
-        // Process payment through strategy
-        $response = $this->strategyManager->processPayment($order->total_amount, $paymentData);
+            // Process payment through strategy
+            $response = $this->strategyManager->processPayment($order->total_amount, $paymentData);
 
-        // Create payment record
-        return $this->paymentRepository->createPayment($order, $gateway, $response);
+            // Create payment record
+            return $this->paymentRepository->createPayment($order, $gateway, $response);
+        } catch (ModelNotFoundException $e) {
+            throw new PaymentException(
+                "Active payment gateway '{$gatewayName}' not found",
+                PaymentException::GATEWAY_NOT_FOUND
+            );
+        } catch (\RuntimeException $e) {
+            throw new PaymentException(
+                $e->getMessage(),
+                PaymentException::GATEWAY_CONFIG_ERROR
+            );
+        } catch (\Exception $e) {
+            throw new PaymentException(
+                'Payment processing failed: ' . $e->getMessage(),
+                PaymentException::PAYMENT_FAILED
+            );
+        }
     }
 
     public function getOrderPayments(Order $order): mixed

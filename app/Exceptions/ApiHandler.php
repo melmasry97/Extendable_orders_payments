@@ -2,139 +2,137 @@
 
 namespace App\Exceptions;
 
-use Throwable;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Helpers\ResponseHelper;
+use Throwable;
 
 class ApiHandler
 {
     /**
-     * HTTP status codes
+     * HTTP status codes for common errors
      */
     private const HTTP_CODES = [
-        'NOT_FOUND' => 404,
         'VALIDATION_ERROR' => 422,
-        'UNAUTHORIZED' => 401,
-        'FORBIDDEN' => 403,
-        'METHOD_NOT_ALLOWED' => 405,
-        'INTERNAL_ERROR' => 500,
+        'AUTHENTICATION_ERROR' => 401,
+        'NOT_FOUND' => 404,
+        'SERVER_ERROR' => 500
     ];
 
     /**
-     * Handle API exceptions
+     * Handle the exception and return JSON response
      */
-    public function handle(Request $request, Throwable $exception): JsonResponse
+    public function handle(Throwable $exception): \Illuminate\Http\JsonResponse
     {
         return match(true) {
-            $this->isNotFoundException($exception) =>
-                $this->notFoundResponse($exception),
+            // Handle API exceptions (our custom exceptions)
+            $exception instanceof ApiException => $this->handleApiException($exception),
 
-            $exception instanceof ValidationException =>
-                $this->validationErrorResponse($exception),
+            // Handle validation errors
+            $exception instanceof ValidationException => $this->handleValidationException($exception),
 
-            $exception instanceof AuthenticationException =>
-                $this->errorResponse('Unauthorized access', self::HTTP_CODES['UNAUTHORIZED']),
+            // Handle authentication errors
+            $exception instanceof AuthenticationException => $this->handleAuthenticationException($exception),
 
-            $exception instanceof AuthorizationException =>
-                $this->errorResponse('Forbidden access', self::HTTP_CODES['FORBIDDEN']),
+            // Handle not found errors
+            $exception instanceof ModelNotFoundException,
+            $exception instanceof NotFoundHttpException => $this->handleNotFoundException($exception),
 
-            $exception instanceof MethodNotAllowedHttpException =>
-                $this->errorResponse('Method not allowed', self::HTTP_CODES['METHOD_NOT_ALLOWED']),
+            // Handle other HTTP exceptions
+            $exception instanceof HttpException => $this->handleHttpException($exception),
 
-            $exception instanceof QueryException =>
-                $this->databaseErrorResponse($exception),
-
-            default => $this->fallbackResponse($exception)
+            // Handle all other exceptions
+            default => $this->handleDefaultException($exception)
         };
     }
 
     /**
-     * Check if exception is a not found exception
+     * Handle our custom API exceptions
      */
-    private function isNotFoundException(Throwable $exception): bool
+    private function handleApiException(ApiException $exception): \Illuminate\Http\JsonResponse
     {
-        return $exception instanceof ModelNotFoundException
-            || $exception instanceof NotFoundHttpException;
-    }
-
-    /**
-     * Handle not found exceptions
-     */
-    private function notFoundResponse(Throwable $exception): JsonResponse
-    {
-        $message = $exception instanceof ModelNotFoundException
-            ? 'Resource not found'
-            : 'Route not found';
-
-        return $this->errorResponse($message, self::HTTP_CODES['NOT_FOUND']);
+        return ResponseHelper::error(
+            message: $exception->getMessage(),
+            code: $exception->getCode(),
+            errors: $exception->getErrors()
+        );
     }
 
     /**
      * Handle validation exceptions
      */
-    private function validationErrorResponse(ValidationException $exception): JsonResponse
+    private function handleValidationException(ValidationException $exception): \Illuminate\Http\JsonResponse
     {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Validation failed',
-            'errors' => $exception->errors()
-        ], self::HTTP_CODES['VALIDATION_ERROR']);
+        return ResponseHelper::error(
+            message: 'Validation failed',
+            code: self::HTTP_CODES['VALIDATION_ERROR'],
+            errors: $exception->errors()
+        );
     }
 
     /**
-     * Handle database exceptions
+     * Handle authentication exceptions
      */
-    private function databaseErrorResponse(QueryException $exception): JsonResponse
+    private function handleAuthenticationException(AuthenticationException $exception): \Illuminate\Http\JsonResponse
     {
-        $message = config('app.debug')
-            ? $exception->getMessage()
-            : 'Database error occurred';
-
-        return $this->errorResponse($message, self::HTTP_CODES['INTERNAL_ERROR']);
+        return ResponseHelper::error(
+            message: 'Unauthenticated',
+            code: self::HTTP_CODES['AUTHENTICATION_ERROR']
+        );
     }
 
     /**
-     * Handle any unhandled exceptions
+     * Handle not found exceptions
      */
-    private function fallbackResponse(Throwable $exception): JsonResponse
+    private function handleNotFoundException(Throwable $exception): \Illuminate\Http\JsonResponse
     {
-        $statusCode = $this->getStatusCodeFromException($exception);
+        $message = $exception instanceof ModelNotFoundException
+            ? 'Resource not found'
+            : 'Route not found';
 
-        $message = config('app.debug')
-            ? $exception->getMessage()
-            : 'An unexpected error occurred';
-
-        return $this->errorResponse($message, $statusCode);
+        return ResponseHelper::error(
+            message: $message,
+            code: self::HTTP_CODES['NOT_FOUND']
+        );
     }
 
     /**
-     * Get status code from exception
+     * Handle HTTP exceptions
      */
-    private function getStatusCodeFromException(Throwable $exception): int
+    private function handleHttpException(HttpException $exception): \Illuminate\Http\JsonResponse
     {
-        if ($exception instanceof HttpException) {
-            return $exception->getStatusCode();
+        return ResponseHelper::error(
+            message: $exception->getMessage() ?: 'HTTP Error',
+            code: $exception->getStatusCode()
+        );
+    }
+
+    /**
+     * Handle all other exceptions
+     */
+    private function handleDefaultException(Throwable $exception): \Illuminate\Http\JsonResponse
+    {
+        // Log unexpected errors
+        if (!config('app.debug')) {
+            \Log::error($exception);
+            return ResponseHelper::error(
+                message: 'Server Error',
+                code: self::HTTP_CODES['SERVER_ERROR']
+            );
         }
 
-        return self::HTTP_CODES['INTERNAL_ERROR'];
-    }
-
-    /**
-     * Return a JSON error response
-     */
-    private function errorResponse(string $message, int $statusCode): JsonResponse
-    {
-        return response()->json([
-            'status' => 'error',
-            'message' => $message
-        ], $statusCode);
+        // In debug mode, return detailed error
+        return ResponseHelper::error(
+            message: $exception->getMessage(),
+            code: self::HTTP_CODES['SERVER_ERROR'],
+            errors: [
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'trace' => $exception->getTraceAsString()
+            ]
+        );
     }
 }
