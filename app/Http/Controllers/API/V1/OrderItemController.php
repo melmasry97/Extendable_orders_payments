@@ -34,9 +34,8 @@ class OrderItemController extends Controller
      */
     public function store(AddItemRequest $request, Order $order): JsonResponse
     {
-        return $this->orderItemInterface->add($order->id, $request->validated()['items']) ?
-            ResponseHelper::success($this->orderItemInterface->getItemsByOrder($order), 'Items added successfully', 201) :
-            ResponseHelper::error('Failed to add items', 400);
+        $this->orderItemInterface->add($order->id, $request->validated()['items']);
+        return ResponseHelper::success($this->orderItemInterface->getItemsByOrder($order), 'Items added successfully', 201);
 
     }
 
@@ -50,9 +49,8 @@ class OrderItemController extends Controller
      */
     public function update(UpdateItemRequest $request, Order $order, OrderItem $item): JsonResponse
     {
-        return $this->orderItemInterface->update($item->id, $request->validated()) ?
-            ResponseHelper::success($item->fresh(), 'Item updated successfully') :
-            ResponseHelper::error('Failed to update item', 400);
+        $this->orderItemInterface->update($item->id, $request->validated());
+        return ResponseHelper::success($item->fresh(), 'Item updated successfully');
     }
 
     /**
@@ -60,8 +58,7 @@ class OrderItemController extends Controller
      */
     public function destroy(Order $order, OrderItem $item): JsonResponse
     {
-        return $this->orderItemInterface->destroy($item->id) ?
-            ResponseHelper::success(null, 'Item removed successfully') :
-            ResponseHelper::error('Failed to remove item', 400);
+        $this->orderItemInterface->destroy($item->id);
+        return ResponseHelper::success(null, 'Item removed successfully');
     }
 }

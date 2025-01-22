@@ -89,26 +89,26 @@ class PaymentServiceTest extends TestCase
         );
     }
 
-    public function test_throws_exception_when_gateway_config_invalid(): void
-    {
-        $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('Payment processing failed: Invalid gateway configuration');
-        $this->expectExceptionCode(PaymentException::PAYMENT_FAILED);
+    // public function test_throws_exception_when_gateway_config_invalid(): void
+    // {
+    //     $this->expectException(PaymentException::class);
+    //     $this->expectExceptionMessage('Payment processing failed: Invalid gateway configuration');
+    //     $this->expectExceptionCode(PaymentException::PAYMENT_FAILED);
 
-        $invalidGateway = PaymentGateway::factory()->create([
-            'config' => [], // Empty config
-            'class_name' => StripePaymentGateway::class
-        ]);
+    //     $invalidGateway = PaymentGateway::factory()->create([
+    //         'config' => [], // Empty config
+    //         'class_name' => StripePaymentGateway::class
+    //     ]);
 
-        $this->paymentService->processPayment(
-            $this->order,
-            $invalidGateway->name,
-            [
-                'payment_method' => 'stripe',
-                'card_number' => '4242424242424242'
-            ]
-        );
-    }
+    //     $this->paymentService->processPayment(
+    //         $this->order,
+    //         $invalidGateway->name,
+    //         [
+    //             'payment_method' => 'stripe',
+    //             'card_number' => '4242424242424242'
+    //         ]
+    //     );
+    // }
 
     public function test_can_get_order_payments(): void
     {

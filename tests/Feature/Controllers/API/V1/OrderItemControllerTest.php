@@ -11,6 +11,9 @@ use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Testing\Fluent\AssertableJson;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\Payment;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 
 class OrderItemControllerTest extends TestCase
 {
@@ -211,4 +214,5 @@ class OrderItemControllerTest extends TestCase
                 'items.0.quantity'
             ]);
     }
+
 }

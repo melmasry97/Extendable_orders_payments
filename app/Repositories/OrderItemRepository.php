@@ -9,7 +9,6 @@ use App\Enums\OrderStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Interfaces\OrderItemInterface;
-use Illuminate\Database\Eloquent\Model;
 
 class OrderItemRepository extends GeneralRepository implements OrderItemInterface
 {
@@ -33,16 +32,6 @@ class OrderItemRepository extends GeneralRepository implements OrderItemInterfac
         });
     }
 
-    public function update(int $id, array $input): bool
-    {
-        $item = $this->model->find($id);
-        if ($item->order->status === OrderStatus::CANCELLED->value ||
-            ($item->order->payments()->exists() &&
-            $item->order->status === OrderStatus::CONFIRMED->value)) {
-            return false;
-        }
-        return $item->update($input);
-    }
 
     public function getItemsByOrder(Order $order): Collection
     {

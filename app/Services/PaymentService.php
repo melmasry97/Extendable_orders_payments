@@ -21,16 +21,6 @@ class PaymentService
 
     protected ?PaymentGatewayInterface $strategy = null;
 
-    public function setPaymentStrategy(PaymentGateway $gateway): void
-    {
-        $gatewayClass = $gateway->class_name;
-        if (!class_exists($gatewayClass)) {
-            throw new \RuntimeException("Payment gateway class {$gatewayClass} not found");
-        }
-
-        $this->strategy = new $gatewayClass($gateway->config);
-    }
-
     public function executePayment(Order $order, array $paymentData): Payment
     {
         // Check if order is in confirmed status
