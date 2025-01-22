@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\PaymentGateway;
+use App\Exceptions\PaymentException;
 use App\Interfaces\PaymentGatewayInterface;
 
 class PaymentStrategyManager
@@ -36,7 +37,7 @@ class PaymentStrategyManager
     public function validateGatewayConfig(string $gatewayClass, array $config): bool
     {
         if (!class_exists($gatewayClass)) {
-            throw new \RuntimeException("Payment gateway class {$gatewayClass} not found");
+            throw new PaymentException("Payment gateway class {$gatewayClass} not found",PaymentException::GATEWAY_NOT_FOUND);
         }
 
         /** @var PaymentGatewayInterface */

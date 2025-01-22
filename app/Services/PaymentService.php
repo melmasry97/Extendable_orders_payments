@@ -33,13 +33,9 @@ class PaymentService
 
     public function executePayment(Order $order, array $paymentData): Payment
     {
-        if (!$this->strategy) {
-            throw new \RuntimeException('Payment strategy not set');
-        }
-
         // Check if order is in confirmed status
-        if ($order->status !== 'confirmed') {
-            throw new \InvalidArgumentException('Payments can only be processed for confirmed orders');
+        if ($order->status !== OrderStatus::CONFIRMED) {
+            throw new PaymentException('Payments can only be processed for confirmed orders', PaymentException::PAYMENT_FAILED);
         }
 
         // Process payment through selected strategy
@@ -105,12 +101,7 @@ class PaymentService
                 "Active payment gateway '{$gatewayName}' not found",
                 PaymentException::GATEWAY_NOT_FOUND
             );
-        } catch (\RuntimeException $e) {
-            throw new PaymentException(
-                $e->getMessage(),
-                PaymentException::GATEWAY_CONFIG_ERROR
-            );
-        } catch (\Exception $e) {
+        }catch (\Exception $e) {
             throw new PaymentException(
                 'Payment processing failed: ' . $e->getMessage(),
                 PaymentException::PAYMENT_FAILED

@@ -5,9 +5,10 @@ namespace App\Repositories;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
+use App\Exceptions\PaymentException;
 use App\Interfaces\PaymentRepositoryInterface;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PaymentRepository implements PaymentRepositoryInterface
 {
@@ -33,7 +34,7 @@ class PaymentRepository implements PaymentRepositoryInterface
             ->first();
 
         if (!$gateway) {
-            throw new ModelNotFoundException("Active payment gateway '{$name}' not found");
+            throw new PaymentException("Active payment gateway '{$name}' not found", PaymentException::GATEWAY_NOT_FOUND);
         }
 
         return $gateway;

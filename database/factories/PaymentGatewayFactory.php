@@ -31,7 +31,6 @@ class PaymentGatewayFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'stripe',
-            'display_name' => 'Stripe',
             'class_name' => StripePaymentGateway::class,
             'config' => [
                 'secret_key' => 'sk_test_' . $this->faker->regexify('[A-Za-z0-9]{24}'),
@@ -48,7 +47,6 @@ class PaymentGatewayFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'paypal',
-            'display_name' => 'PayPal',
             'class_name' => 'App\Services\Payment\PayPalPaymentGateway',
             'config' => [
                 'client_id' => $this->faker->regexify('[A-Za-z0-9]{32}'),
