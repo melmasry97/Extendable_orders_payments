@@ -22,8 +22,10 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request): JsonResponse
     {
-        $products = $this->productInterface->getPaginated([], $request->per_page);
-        return ResponseHelper::success($products, 'Products fetched successfully');
+        return ResponseHelper::success(
+            $this->productInterface->getPaginated([], $request->per_page),
+            'Products fetched successfully'
+        );
     }
 
     /**
@@ -31,8 +33,11 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = $this->productInterface->create($request->validated());
-        return ResponseHelper::success($product, 'Product created successfully', 201);
+        return ResponseHelper::success(
+            $this->productInterface->create($request->validated()),
+            'Product created successfully',
+            201
+        );
     }
 
     /**
@@ -48,9 +53,10 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        return $this->productInterface->update($product->id, $request->validated()) ?
-            ResponseHelper::success($product->fresh(), 'Product updated successfully') :
-            ResponseHelper::error('Cannot delete product that has been ordered');
+        return ResponseHelper::success(
+            $this->productInterface->update($product->id, $request->validated()),
+            'Product updated successfully'
+        );
     }
 
     /**
@@ -58,9 +64,9 @@ class ProductController extends Controller
      */
     public function destroy(Product $product): JsonResponse
     {
-        return $this->productInterface->destroy($product->id) ?
-            ResponseHelper::success(null, 'Product deleted successfully') :
-            ResponseHelper::error('Cannot delete product that has been ordered');
-
+        return ResponseHelper::success(
+            $this->productInterface->destroy($product->id),
+            'Product deleted successfully'
+        );
     }
 }

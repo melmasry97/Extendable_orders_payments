@@ -38,6 +38,7 @@ class ProductControllerTest extends TestCase
             ->assertJsonCount(3, 'data.data')
             ->assertJsonStructure([
                 'status',
+                'message',
                 'data' => [
                     'current_page',
                     'data' => [

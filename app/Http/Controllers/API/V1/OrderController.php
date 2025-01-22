@@ -33,8 +33,11 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request): JsonResponse
     {
-        $order = $this->orderInterface->create($request->validated());
-        return ResponseHelper::success($order, 'Order created successfully', 201);
+        return ResponseHelper::success(
+            $this->orderInterface->create($request->validated()),
+            'Order created successfully',
+            201
+        );
     }
 
     /**
@@ -65,10 +68,9 @@ class OrderController extends Controller
      */
     public function destroy(Order $order): JsonResponse
     {
-
-        return $this->orderInterface->destroy($order->id) ?
-            ResponseHelper::success(null, 'Order deleted successfully') :
-            ResponseHelper::error('Cannot delete order with payments');
-
+        return ResponseHelper::success(
+            $this->orderInterface->destroy($order->id),
+            'Order deleted successfully'
+        );
     }
 }
