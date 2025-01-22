@@ -23,6 +23,32 @@ class OrderItem extends Model
         'subtotal' => 'decimal:2'
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Calculate subtotal before saving
+        static::saving(function ($orderItem) {
+            $orderItem->subtotal = $orderItem->quantity * $orderItem->unit_price;
+        });
+
+        // Update order total after create/update/delete
+        static::saved(function ($orderItem) {
+            $orderItem->updateOrderTotal();
+        });
+
+        static::deleted(function ($orderItem) {
+            $orderItem->updateOrderTotal();
+        });
+    }
+
+    protected function updateOrderTotal(): void
+    {
+        $this->order->update([
+            'total_amount' => $this->order->items()->sum('subtotal')
+        ]);
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
@@ -31,18 +57,5 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($item) {
-            $item->subtotal = $item->quantity * $item->unit_price;
-        });
-
-        static::updating(function ($item) {
-            $item->subtotal = $item->quantity * $item->unit_price;
-        });
     }
 }

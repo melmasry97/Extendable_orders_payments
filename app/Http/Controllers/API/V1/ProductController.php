@@ -22,7 +22,7 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request): JsonResponse
     {
-        $products = $this->productInterface->getPaginated([], $request->input('per_page'));
+        $products = $this->productInterface->getPaginated([], $request->per_page);
         return ResponseHelper::success($products, 'Products fetched successfully');
     }
 

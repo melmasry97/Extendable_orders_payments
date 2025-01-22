@@ -35,7 +35,6 @@ class OrderController extends Controller
     {
         $order = $this->orderInterface->create($request->validated());
         return ResponseHelper::success($order, 'Order created successfully', 201);
-
     }
 
     /**

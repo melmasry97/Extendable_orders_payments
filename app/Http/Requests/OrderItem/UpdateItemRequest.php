@@ -15,7 +15,6 @@ class UpdateItemRequest extends FormRequest
     {
         return [
             'quantity' => 'sometimes|required|integer|min:1',
-            'unit_price' => 'sometimes|required|numeric|min:0'
         ];
     }
 }

@@ -25,8 +25,6 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('products', ProductController::class);
 
         // Nested routes for order items
-        Route::post('orders/{order}/items', [OrderItemController::class, 'store']);
-        Route::patch('orders/{order}/items/{item}', [OrderItemController::class, 'update']);
-        Route::delete('orders/{order}/items/{item}', [OrderItemController::class, 'destroy']);
+        Route::apiResource('orders.items', OrderItemController::class);
     });
 });
