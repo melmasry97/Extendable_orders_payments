@@ -12,39 +12,33 @@ use App\Interfaces\AuthInterface;
 
 class AuthController extends Controller
 {
-    protected $authInterface;
 
-    public function __construct(AuthInterface $authInterface)
+    public function __construct(protected AuthInterface $authInterface)
     {
-        $this->authInterface = $authInterface;
     }
 
-    public function register(RegisterRequest $request) : JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         $user = $this->authInterface->register($request->validated());
-        return auth()->login($user)
-            ? ResponseHelper::authSuccess($user, auth()->tokenById($user->id), 'User created successfully')
-            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
+        $this->authInterface->login($user);
+        return ResponseHelper::authSuccess($user, auth()->tokenById($user->id), 'User created successfully');
     }
 
-    public function login(LoginRequest $request) : JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        return $this->authInterface->login($request->validated())
-            ? ResponseHelper::authSuccess($user = auth()->user(), auth()->tokenById($user->id))
-            : ResponseHelper::error('Invalid credentials', 401, 'invalid email or password');
+        $user = $this->authInterface->login($request->validated());
+        return ResponseHelper::authSuccess($user = auth()->user(), auth()->tokenById($user->id));
     }
 
-    public function logout() : JsonResponse
+    public function logout(): JsonResponse
     {
-        return $this->authInterface->logout()
-            ? ResponseHelper::success(message: 'Successfully logged out')
-            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
+        $this->authInterface->logout();
+        return ResponseHelper::success(message: 'Successfully logged out');
     }
 
-    public function refresh() : JsonResponse
+    public function refresh(): JsonResponse
     {
-        return $this->authInterface->refresh()
-            ? ResponseHelper::authSuccess(auth()->user(), auth()->refresh())
-            : ResponseHelper::error('Unauthenticated', 401, 'Unauthenticated');
+        $this->authInterface->refresh();
+        return ResponseHelper::authSuccess(auth()->user(), auth()->refresh());
     }
 }

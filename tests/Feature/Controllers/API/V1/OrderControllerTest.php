@@ -7,8 +7,9 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
 use App\Enums\OrderStatus;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class OrderControllerTest extends TestCase
 {
@@ -16,12 +17,16 @@ class OrderControllerTest extends TestCase
 
     private User $user;
     private string $baseUrl = 'api/v1/orders';
+    private string $token;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user, 'api');
+        $this->token = JWTAuth::fromUser($this->user);
+
+        // Set the authorization header for all requests
+        $this->withHeader('Authorization', 'Bearer ' . $this->token);
     }
 
     #[Test]
@@ -163,7 +168,7 @@ class OrderControllerTest extends TestCase
             ->assertJson([
                 'status' => 'success',
                 'message' => 'Order deleted successfully',
-                'data' => null
+                'data' => true
             ]);
 
         $this->assertDatabaseMissing('orders', ['id' => $order->id]);

@@ -14,7 +14,7 @@ use App\Http\Requests\Product\ProductIndexRequest;
 class ProductController extends Controller
 {
     public function __construct(
-        private ProductInterface $productInterface
+        protected ProductInterface $productInterface
     ) {}
 
     /**

@@ -4,12 +4,13 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Enums\OrderStatus;
 use App\Models\PaymentGateway;
-use App\Interfaces\PaymentGatewayInterface;
 use App\Exceptions\PaymentException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use App\Services\Payment\PaymentStrategyManager;
+use App\Interfaces\PaymentGatewayInterface;
 use App\Interfaces\PaymentRepositoryInterface;
+use App\Services\Payment\PaymentStrategyManager;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PaymentService
 {
@@ -82,7 +83,7 @@ class PaymentService
     public function processPayment(Order $order, string $gatewayName, array $paymentData): Payment
     {
         // Validate order status
-        if ($order->status !== 'confirmed') {
+        if ($order->status !== OrderStatus::CONFIRMED) {
             throw new PaymentException(
                 'Payments can only be processed for confirmed orders',
                 PaymentException::ORDER_NOT_CONFIRMED

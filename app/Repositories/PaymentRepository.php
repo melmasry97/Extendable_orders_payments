@@ -29,7 +29,7 @@ class PaymentRepository implements PaymentRepositoryInterface
     public function getActiveGateway(string $name): PaymentGateway
     {
         $gateway = PaymentGateway::where('name', $name)
-            ->where('is_active', true)
+            ->where('is_active', true) //todo:: active scope
             ->first();
 
         if (!$gateway) {

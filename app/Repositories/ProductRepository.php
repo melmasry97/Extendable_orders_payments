@@ -17,8 +17,8 @@ class ProductRepository extends GeneralRepository implements ProductInterface
 
     public function destroy(int $id): bool
     {
-        $product = $this->model->findOrFail($id);
-        
+        $product = $this->model->find($id);
+
         if ($product->orderItems()->exists()) {
             throw new ProductHasOrdersException();
         }
