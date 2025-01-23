@@ -48,6 +48,18 @@ class Order extends Model
         return $this->status === OrderStatus::CONFIRMED;
     }
 
+    /**
+     * Scope a query to filter orders by status.
+     */
+    public function scopeFilterStatus($query, $status)
+    {
+        if (!empty($status)) {
+            $query->where('status', $status['status']);
+        }
+
+        return $query;
+    }
+
     protected static function boot()
     {
         parent::boot();

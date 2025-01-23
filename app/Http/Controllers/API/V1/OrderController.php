@@ -24,8 +24,9 @@ class OrderController extends Controller
      */
     public function index(OrderIndexRequest $request): JsonResponse
     {
+        $query = Order::query()->filterStatus($request->only('status'))->with('user');
         return ResponseHelper::success(
-            OrderResource::collection($this->orderInterface->getPaginated(['user'])),
+            OrderResource::collection($query->paginate($request->get('per_page', 15))),
             'Orders fetched successfully'
         );
     }
