@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Models\Product;
 use App\Helpers\ResponseHelper;
+use App\Traits\PaginatedResponse;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -11,8 +12,11 @@ use App\Interfaces\ProductInterface;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Requests\Product\ProductIndexRequest;
+use App\Http\Resources\ProductResource;
+
 class ProductController extends Controller
 {
+    use PaginatedResponse;
     public function __construct(
         protected ProductInterface $productInterface
     ) {}
@@ -22,8 +26,10 @@ class ProductController extends Controller
      */
     public function index(ProductIndexRequest $request): JsonResponse
     {
-        return ResponseHelper::success(
+        return $this->respondWithPagination(
             $this->productInterface->getPaginated([], $request->per_page),
+            ProductResource::collection($this->productInterface->getPaginated([], $request->per_page)),
+            'products',
             'Products fetched successfully'
         );
     }
@@ -34,7 +40,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request): JsonResponse
     {
         return ResponseHelper::success(
-            $this->productInterface->create($request->validated()),
+            new ProductResource($this->productInterface->create($request->validated())),
             'Product created successfully',
             201
         );
@@ -45,7 +51,10 @@ class ProductController extends Controller
      */
     public function show(Product $product): JsonResponse
     {
-        return ResponseHelper::success($product, 'Product fetched successfully');
+        return ResponseHelper::success(
+            new ProductResource($product),
+            'Product fetched successfully'
+        );
     }
 
     /**
@@ -55,7 +64,7 @@ class ProductController extends Controller
     {
         $this->productInterface->update($product->id, $request->validated());
         return ResponseHelper::success(
-            $product->fresh(),
+            new ProductResource($product->fresh()),
             'Product updated successfully'
         );
     }

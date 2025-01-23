@@ -34,14 +34,4 @@ class PaymentStrategyManager
         return $this->getStrategy()->processPayment($amount, $paymentData);
     }
 
-    public function validateGatewayConfig(string $gatewayClass, array $config): bool
-    {
-        if (!class_exists($gatewayClass)) {
-            throw new PaymentException("Payment gateway class {$gatewayClass} not found",PaymentException::GATEWAY_NOT_FOUND);
-        }
-
-        /** @var PaymentGatewayInterface */
-        $strategy = new $gatewayClass($config);
-        return $strategy->validateConfig($config);
-    }
 }

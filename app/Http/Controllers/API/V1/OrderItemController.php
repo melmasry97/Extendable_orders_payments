@@ -11,6 +11,7 @@ use App\Interfaces\OrderItemInterface;
 use App\Helpers\ResponseHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Resources\OrderItemResource;
 
 class OrderItemController extends Controller
 {
@@ -26,7 +27,9 @@ class OrderItemController extends Controller
      */
     public function index(Order $order): JsonResponse
     {
-        return ResponseHelper::success($this->orderItemInterface->getItemsByOrder($order));
+        return ResponseHelper::success(
+            OrderItemResource::collection($this->orderItemInterface->getItemsByOrder($order))
+        );
     }
 
     /**
@@ -35,13 +38,18 @@ class OrderItemController extends Controller
     public function store(AddItemRequest $request, Order $order): JsonResponse
     {
         $this->orderItemInterface->add($order->id, $request->validated()['items']);
-        return ResponseHelper::success($this->orderItemInterface->getItemsByOrder($order), 'Items added successfully', 201);
-
+        return ResponseHelper::success(
+            OrderItemResource::collection($this->orderItemInterface->getItemsByOrder($order)),
+            'Items added successfully',
+            201
+        );
     }
 
     public function show(Order $order, OrderItem $item): JsonResponse
     {
-        return ResponseHelper::success($item);
+        return ResponseHelper::success(
+            new OrderItemResource($item)
+        );
     }
 
     /**
@@ -50,7 +58,10 @@ class OrderItemController extends Controller
     public function update(UpdateItemRequest $request, Order $order, OrderItem $item): JsonResponse
     {
         $this->orderItemInterface->update($item->id, $request->validated());
-        return ResponseHelper::success($item->fresh(), 'Item updated successfully');
+        return ResponseHelper::success(
+            new OrderItemResource($item->fresh()),
+            'Item updated successfully'
+        );
     }
 
     /**

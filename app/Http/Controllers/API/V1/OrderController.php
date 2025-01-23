@@ -10,6 +10,8 @@ use App\Http\Requests\Order\OrderIndexRequest;
 use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Interfaces\OrderInterface;
+use App\Http\Resources\OrderResource;
+
 class OrderController extends Controller
 {
     public function __construct(
@@ -23,7 +25,7 @@ class OrderController extends Controller
     public function index(OrderIndexRequest $request): JsonResponse
     {
         return ResponseHelper::success(
-            $this->orderInterface->getPaginated(['user']),
+            OrderResource::collection($this->orderInterface->getPaginated(['user'])),
             'Orders fetched successfully'
         );
     }
@@ -34,7 +36,7 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         return ResponseHelper::success(
-            $this->orderInterface->create($request->validated()),
+            new OrderResource($this->orderInterface->create($request->validated())),
             'Order created successfully',
             201
         );
@@ -46,10 +48,9 @@ class OrderController extends Controller
     public function show(int $id): JsonResponse
     {
         return ResponseHelper::success(
-            $this->orderInterface->getOrderWithDetails($id),
+            new OrderResource($this->orderInterface->getOrderWithDetails($id)),
             'Order fetched successfully'
         );
-
     }
 
     /**
@@ -57,8 +58,9 @@ class OrderController extends Controller
      */
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
+        $this->orderInterface->update($order->id, $request->validated());
         return ResponseHelper::success(
-            $this->orderInterface->update($order->id, $request->validated()),
+            new OrderResource($order->fresh()),
             'Order updated successfully'
         );
     }

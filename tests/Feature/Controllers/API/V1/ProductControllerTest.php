@@ -45,31 +45,38 @@ class ProductControllerTest extends TestCase
     public function it_can_list_all_products()
     {
         // Arrange
-        $products = Product::factory()->count(3)->create();
+        Product::factory()->count(3)->create();
+
         // Act
         $response = $this->getJson($this->baseUrl);
 
         // Assert
         $response->assertOk()
-            ->assertJsonCount(3, 'data.data')
             ->assertJsonStructure([
                 'status',
                 'message',
                 'data' => [
-                    'current_page',
-                    'data' => [
+                    'products' => [
                         '*' => [
                             'id',
                             'name',
                             'description',
                             'price',
+                            'stock',
+                            'quantity',
                             'created_at',
-                            'updated_at',
-                            'quantity'
+                            'updated_at'
                         ]
+                    ],
+                    "pagination" => [
+                        'total',
+                        'per_page',
+                        'current_page',
+                        'last_page'
                     ]
                 ]
-            ]);
+            ])
+            ->assertJsonCount(3, 'data.products');
     }
 
     #[Test]

@@ -42,16 +42,15 @@ class OrderControllerTest extends TestCase
         $response->assertOk()
             ->assertJsonStructure([
                 'status',
+                'message',
                 'data' => [
-                    'data' => [
-                        '*' => [
-                            'id',
-                            'user_id',
-                            'status',
-                            'total_amount',
-                            'created_at',
-                            'updated_at'
-                        ]
+                    '*' => [
+                        'id',
+                        'user_id',
+                        'status',
+                        'total_amount',
+                        'created_at',
+                        'updated_at'
                     ]
                 ]
             ]);
@@ -133,9 +132,13 @@ class OrderControllerTest extends TestCase
     public function it_can_update_order()
     {
         // Arrange
-        $order = Order::factory()->create(['user_id' => $this->user->id]);
+        $order = Order::factory()->create([
+            'user_id' => $this->user->id,
+            'status' => OrderStatus::PENDING
+        ]);
+
         $updateData = [
-            'total_amount' => 100
+            'status' => OrderStatus::CONFIRMED->value
         ];
 
         // Act
@@ -143,14 +146,23 @@ class OrderControllerTest extends TestCase
 
         // Assert
         $response->assertOk()
-            ->assertJson([
-                'status' => 'success',
-                'message' => 'Order updated successfully'
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'status',
+                    'total_amount',
+                    'created_at',
+                    'updated_at'
+                ]
             ]);
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'user_id' => $this->user->id,
+            'status' => OrderStatus::CONFIRMED->value
         ]);
     }
 
